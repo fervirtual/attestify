@@ -35,7 +35,7 @@ contract AttestationCore is Ownable {
     address indexed recipient
     );
     event AttestationRevoked(bytes32 indexed uid, address indexed attester);
-    event FeeCollectorUpdated(address oldFeeCollector, address newFeeCollector);
+    event FeeCollectorUpdated(address indexed oldFeeCollector, address indexed newFeeCollector);
 
     /// @param initialFeeCollector Direccion del contrato FeeCollector a usar.
     constructor(address initialFeeCollector) Ownable(msg.sender) {
