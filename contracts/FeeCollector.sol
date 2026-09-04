@@ -2,18 +2,22 @@
 pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /// @title FeeCollector
 /// @notice Cobra un fee fijo y configurable por cada operación registrada,
 ///         y lo transfiere automáticamente a una dirección de tesorería.
 ///         Ver docs/adr/0002-modelo-de-monetizacion.md para el contexto
 ///         de esta decisión.
-contract FeeCollector is Ownable {
+contract FeeCollector is Ownable, Pausable {
     /// @notice Monto del fee en wei, cobrado por cada operación.
     uint256 public fee;
 
     /// @notice Dirección que recibe los fees cobrados.
     address public treasury;
+
+    /// @notice Tope máximo que el fee puede alcanzar, ni el owner puede superarlo.
+    uint256 public constant MAX_FEE = 0.01 ether;
 
     event FeeCharged(address indexed payer, uint256 amount);
     event FeeUpdated(uint256 oldFee, uint256 newFee);
@@ -25,13 +29,15 @@ contract FeeCollector is Ownable {
         Ownable(msg.sender)
     {
         require(initialTreasury != address(0), "Treasury invalida");
+        require(initialFee <= MAX_FEE, "Fee excede el maximo permitido");
         fee = initialFee;
         treasury = initialTreasury;
     }
 
     /// @notice Cobra el fee actual. Pensado para ser llamado desde el
     ///         contrato de attestations en cada emision/verificacion.
-    function collectFee() external payable {
+    ///         No funciona mientras el contrato esta pausado.
+    function collectFee() external payable whenNotPaused {
         require(msg.value >= fee, "Fee insuficiente");
 
         (bool sent, ) = treasury.call{value: msg.value}("");
@@ -40,8 +46,10 @@ contract FeeCollector is Ownable {
         emit FeeCharged(msg.sender, msg.value);
     }
 
-    /// @notice Actualiza el monto del fee. Solo el owner puede llamarlo.
+    /// @notice Actualiza el monto del fee. Solo el owner puede llamarlo,
+    ///         y no puede superar MAX_FEE.
     function setFee(uint256 newFee) external onlyOwner {
+        require(newFee <= MAX_FEE, "Fee excede el maximo permitido");
         uint256 oldFee = fee;
         fee = newFee;
         emit FeeUpdated(oldFee, newFee);
@@ -53,5 +61,16 @@ contract FeeCollector is Ownable {
         address oldTreasury = treasury;
         treasury = newTreasury;
         emit TreasuryUpdated(oldTreasury, newTreasury);
+    }
+
+    /// @notice Pausa el cobro de fees. Solo el owner puede llamarlo.
+    ///         Uso pensado para emergencias (bug detectado post-deploy).
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /// @notice Reanuda el cobro de fees. Solo el owner puede llamarlo.
+    function unpause() external onlyOwner {
+        _unpause();
     }
 }
