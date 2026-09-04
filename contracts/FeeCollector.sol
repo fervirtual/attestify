@@ -21,7 +21,7 @@ contract FeeCollector is Ownable, Pausable {
 
     event FeeCharged(address indexed payer, uint256 amount);
     event FeeUpdated(uint256 oldFee, uint256 newFee);
-    event TreasuryUpdated(address oldTreasury, address newTreasury);
+    event TreasuryUpdated(address indexed oldTreasury, address indexed newTreasury);
 
     /// @param initialFee Monto inicial del fee, en wei.
     /// @param initialTreasury Dirección inicial que recibe los fees.
@@ -40,10 +40,10 @@ contract FeeCollector is Ownable, Pausable {
     function collectFee() external payable whenNotPaused {
         require(msg.value >= fee, "Fee insuficiente");
 
+        emit FeeCharged(msg.sender, msg.value);
+
         (bool sent, ) = treasury.call{value: msg.value}("");
         require(sent, "Transferencia fallida");
-
-        emit FeeCharged(msg.sender, msg.value);
     }
 
     /// @notice Actualiza el monto del fee. Solo el owner puede llamarlo,
