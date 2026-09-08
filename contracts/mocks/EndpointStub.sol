@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 pragma solidity ^0.8.28;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
+
 /// @title EndpointStub
 /// @notice Stub minimo del Endpoint de LayerZero, unicamente para tests
 ///         locales de CrossChainRelay. NO reemplaza pruebas end-to-end
 ///         reales en testnet (ver docs/adr para el contexto de esta
 ///         limitacion, pendiente hasta que LayerZero soporte Hardhat 3
 ///         en su toolkit oficial de testing).
-contract EndpointStub {
+contract EndpointStub is Ownable {
     struct MessagingParams {
         uint32 dstEid;
         bytes32 receiver;
@@ -28,16 +30,18 @@ contract EndpointStub {
     }
 
     /// @notice Fee fijo que este stub simula devolver en cada quote.
-    uint256 public stubNativeFee = 1_000_000_000_000;
+    uint256 public constant stubNativeFee = 1_000_000_000_000;
 
     address public delegate;
 
     event StubSend(uint32 dstEid, bytes message, uint256 valueSent);
 
+    constructor() Ownable(msg.sender) {}
+
     function quote(
         MessagingParams calldata /* params */,
         address /* sender */
-    ) external view returns (MessagingFee memory) {
+    ) external pure returns (MessagingFee memory) {
         return MessagingFee(stubNativeFee, 0);
     }
 
@@ -55,6 +59,16 @@ contract EndpointStub {
     }
 
     function setDelegate(address _delegate) external {
+        require(_delegate != address(0), "Delegate invalido");
         delegate = _delegate;
+    }
+
+    /// @notice Permite retirar el ether acumulado en el stub durante
+    ///         tests. Protegido con onlyOwner como buena practica
+    ///         adicional, aunque este contrato nunca deberia
+    ///         desplegarse fuera de entornos de test locales.
+    function withdraw() external onlyOwner {
+        (bool sent, ) = payable(msg.sender).call{value: address(this).balance}("");
+        require(sent, "Retiro fallido");
     }
 }

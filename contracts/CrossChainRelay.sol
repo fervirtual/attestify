@@ -27,10 +27,10 @@ contract CrossChainRelay is OApp, OAppOptionsType3 {
         address recipient
     );
 
-    /// @param endpoint Direccion del Endpoint de LayerZero en esta red.
+    /// @param _endpoint Direccion del Endpoint de LayerZero en esta red.
     /// @param delegate Direccion con permisos de configuracion (owner).
-    constructor(address endpoint, address delegate)
-        OApp(endpoint, delegate)
+    constructor(address _endpoint, address delegate)
+        OApp(_endpoint, delegate)
         Ownable(delegate)
     {}
 
