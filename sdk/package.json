@@ -1,0 +1,20 @@
+{
+  "name": "attestify",
+  "version": "0.1.0",
+  "description": "SDK para integrar Attestify: credenciales verificables e interoperables entre blockchains.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "license": "Apache-2.0",
+  "scripts": {
+    "sync-abis": "node ../scripts/sync-abis.mjs",
+    "prebuild": "npm run sync-abis",
+    "build": "tsc"
+  },
+  "peerDependencies": {
+    "ethers": "^6.14.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3"
+  }
+}
