@@ -6,7 +6,7 @@ describe("AttestationCore", function () {
   const SCHEMA = "0x0000000000000000000000000000000000000000000000000000000000000001";
 
   async function deployFixture() {
-    const { ethers } = await network.connect();
+    const { ethers } = await network.getOrCreate();
     const [owner, treasury, attester, recipient, other] = await ethers.getSigners();
 
     const FeeCollectorFactory = await ethers.getContractFactory("FeeCollector");
@@ -29,7 +29,7 @@ describe("AttestationCore", function () {
     });
 
     it("rechaza feeCollector en address(0)", async function () {
-      const { ethers } = await network.connect();
+      const { ethers } = await network.getOrCreate();
       const AttestationCoreFactory = await ethers.getContractFactory("AttestationCore");
       await expect(
         AttestationCoreFactory.deploy("0x0000000000000000000000000000000000000000")

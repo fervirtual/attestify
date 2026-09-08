@@ -6,7 +6,7 @@ describe("FeeCollector", function () {
   const MAX_FEE = 10_000_000_000_000_000n; // 0.01 ETH
 
   async function deployFixture() {
-    const { ethers } = await network.connect();
+    const { ethers } = await network.getOrCreate();
     const [owner, treasury, other] = await ethers.getSigners();
 
     const FeeCollector = await ethers.getContractFactory("FeeCollector");
@@ -26,7 +26,7 @@ describe("FeeCollector", function () {
     });
 
     it("rechaza treasury en address(0)", async function () {
-      const { ethers } = await network.connect();
+      const { ethers } = await network.getOrCreate();
       const FeeCollector = await ethers.getContractFactory("FeeCollector");
       await expect(
         FeeCollector.deploy(INITIAL_FEE, "0x0000000000000000000000000000000000000000")
@@ -34,7 +34,7 @@ describe("FeeCollector", function () {
     });
 
     it("rechaza un fee inicial mayor a MAX_FEE", async function () {
-      const { ethers } = await network.connect();
+      const { ethers } = await network.getOrCreate();
       const [, treasury] = await ethers.getSigners();
       const FeeCollector = await ethers.getContractFactory("FeeCollector");
       await expect(

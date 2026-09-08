@@ -7,7 +7,7 @@ describe("CrossChainRelay", function () {
   const UID = "0x0000000000000000000000000000000000000000000000000000000000000042";
 
   async function deployFixture() {
-    const { ethers } = await network.connect();
+    const { ethers } = await network.getOrCreate();
     const [owner, attester, recipient, other] = await ethers.getSigners();
 
     const EndpointStub = await ethers.getContractFactory("EndpointStub");
