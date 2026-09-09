@@ -73,3 +73,12 @@ ecosistema, no atribuibles a errores de configuracion propios:
 - Revisar periodicamente si `@layerzerolabs/test-devtools-evm-hardhat`
   lanza una version compatible con Hardhat 3, para reemplazar el stub
   casero por el toolkit oficial y ampliar la cobertura de tests locales.
+
+## Actualizacion: validacion end-to-end completada
+La brecha mencionada arriba (falta de validacion end-to-end real
+entre dos cadenas) fue cerrada. Se desplego CrossChainRelay en una
+segunda red real (Arbitrum Sepolia), se configuraron los peers, y se
+envio y confirmo la entrega de un mensaje real desde Sepolia.
+
+Detalle completo del proceso y resultado en
+docs/guides/cross-chain-testing.md.

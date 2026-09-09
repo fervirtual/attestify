@@ -28,7 +28,7 @@ y Arbitrum Sepolia comparten la direccion:
 ### Intento 1: faucets tradicionales (fallaron)
 
 Varios faucets (Alchemy, QuickNode, Chainlink) piden que la wallet
-tenga un pequeño balance en la red MAINNET real (ETH o LINK) para
+tenga un pequeno balance en la red MAINNET real (ETH o LINK) para
 evitar abuso del servicio. Como la wallet de testing es nueva y sin
 fondos reales (correcto, no deberia tenerlos), estos faucets rechazan
 la solicitud.
@@ -57,3 +57,149 @@ En dashboard.alchemy.com, dentro de la app ya creada:
 
 Se agrega una nueva variable, reusando la misma clave privada de
 siempre (la wallet de testing es la misma en todas las redes EVM):
+
+ARBITRUM_SEPOLIA_RPC_URL=<url de alchemy>
+
+
+## Paso 5: agregar la red a hardhat.config.ts
+
+Dentro del bloque `networks`, se agrega una entrada nueva:
+
+```typescript
+arbitrumSepolia: {
+  type: "http",
+  chainType: "l1",
+  url: configVariable("ARBITRUM_SEPOLIA_RPC_URL"),
+  accounts: [configVariable("SEPOLIA_PRIVATE_KEY")],
+},
+```
+
+## Tecnica: verificar un balance en cualquier red via consola
+
+Util para confirmar que los fondos llegaron, sin depender de que
+MetaMask este mostrando la red correcta en su interfaz:
+
+```bash
+npx hardhat console --network arbitrumSepolia
+```
+
+Dentro de la consola, linea por linea (Hardhat 3 no inyecta `ethers`
+como variable global automatica, hay que obtenerlo explicitamente):
+
+```javascript
+const hardhat = await import("hardhat");
+const { ethers } = await hardhat.default.network.connect();
+const [signer] = await ethers.getSigners();
+const balance = await ethers.provider.getBalance(signer.address);
+console.log(signer.address, ethers.formatEther(balance));
+```
+
+Esto consulta directamente la blockchain real (via el RPC configurado
+para esa red) y muestra el balance exacto - mas confiable que mirar
+la interfaz visual de MetaMask, que depende de tener la red correcta
+seleccionada ahi.
+
+## Paso 6: desplegar CrossChainRelay en la segunda red
+
+No hace falta desplegar FeeCollector ni AttestationCore en la segunda
+red para esta prueba puntual - solo CrossChainRelay, con un modulo de
+Ignition separado (ignition/modules/CrossChainRelayArbitrum.ts).
+
+```bash
+npx hardhat ignition deploy ignition/modules/CrossChainRelayArbitrum.ts --network arbitrumSepolia
+```
+
+## Paso 7: configurar setPeer en ambos contratos
+
+Script: `scripts/cross-chain/setup-peers.ts`
+
+```bash
+npx hardhat run scripts/cross-chain/setup-peers.ts --network sepolia
+```
+
+Configura, en una sola corrida, el peer en ambas direcciones (el
+script se conecta explicitamente a cada red por su cuenta).
+
+## Paso 8: enviar un mensaje real desde Sepolia
+
+Script: `scripts/cross-chain/send-cross-chain-message.ts`
+
+```bash
+npx hardhat run scripts/cross-chain/send-cross-chain-message.ts --network sepolia
+```
+
+Esto llama a `notifyAttestation`, pagando el fee de LayerZero
+consultado previamente con `quoteNotify`. El script devuelve un hash
+de transaccion que se puede rastrear en:
+
+https://layerzeroscan.com (asegurarse de cambiar el selector de
+"MAINNET" a "TESTNET" arriba a la izquierda, sino no encuentra la
+transaccion).
+
+## Paso 9: confirmar la recepcion en destino
+
+Script: `scripts/cross-chain/check-cross-chain-receipt.ts`
+
+```bash
+npx hardhat run scripts/cross-chain/check-cross-chain-receipt.ts --network arbitrumSepolia
+```
+
+### Limitacion importante de Alchemy (plan gratuito)
+
+El metodo `eth_getLogs` esta limitado a un rango de **10 bloques por
+consulta** en el plan gratuito de Alchemy. Como Arbitrum genera
+bloques muy rapido (~250ms cada uno), buscar eventos recientes
+requiere recorrer hacia atras en bloques de 10, no se puede pedir un
+rango grande de una sola vez. El script ya maneja esto automaticamente
+(recorre hasta 3000 iteraciones de 10 bloques = ~30000 bloques de
+historial).
+
+Si el error dice `"UnknownError: Received an unexpected status
+code..."` sin mas detalle, es probable que sea este limite - para ver
+el mensaje real de Alchemy, hay que hacer la consulta con `fetch`
+directo al RPC en vez de a traves de Hardhat/ethers, que oculta el
+cuerpo del error en varias capas.
+
+## Resultado: validacion exitosa
+
+Mensaje enviado desde Sepolia, entregado en Arbitrum Sepolia,
+confirmado por evento `AttestationReceived`:
+
+srcEid: 40161 (Sepolia)
+uid: 0x0000000000000000000000000000000000000000000000000000000000000099
+schema: 0x0000000000000000000000000000000000000000000000000000000000000001
+attester: 0x8A2030E0657fa7013E686da1CEE823Eb2536973B
+recipient: 0x8A2030E0657fa7013E686da1CEE823Eb2536973B
+tx hash (destino): 0x39d4e344b5253c06eecde046c13b6f55d84ac2bb7b03eb8dabe1187ff05adfef
+Tiempo de entrega: ~1m 27s (segun LayerZeroScan)
+
+
+Esto confirma que CrossChainRelay funciona correctamente entre dos
+redes reales, cerrando la brecha de validacion documentada en
+ADR 0003.
+
+## Direcciones de los deployments usados en esta prueba
+
+- CrossChainRelay en Sepolia: `0xc958482AF6c74C16A26e41F8864998f7ea4E9B7E`
+- CrossChainRelay en Arbitrum Sepolia: `0xA73EB3aAcE334FFF3b910AdF40AbFF4bB25E93dD`
+  (nota: coincide con la direccion del primer intento de deploy en
+  Sepolia, por una coincidencia de nonce - ver seccion tecnica abajo)
+
+## Nota tecnica: coincidencia de direcciones entre redes
+
+La direccion de un contrato nuevo se calcula a partir de la direccion
+de quien lo despliega y su nonce (numero de transaccion), sin
+depender de en que red se despliega. Como el CrossChainRelay en
+Arbitrum Sepolia fue la primera transaccion de la wallet de deploy en
+esa red (nonce 0), coincidio exactamente con la direccion del primer
+intento de deploy en Sepolia (que tambien fue nonce 0 ahi en su
+momento). Es un comportamiento esperado, no un error.
+
+## Leccion aprendida sobre heredocs en esta terminal
+
+Los bloques `cat > archivo << 'EOF' ... EOF` largos, pegados en la
+terminal de Git Bash dentro de Cursor, tienden a corromperse quedando
+con contenido mezclado o truncado. Para archivos de configuracion o
+codigo, es mas confiable editar directamente en el editor de Cursor
+(crear el archivo, pegar el contenido, Ctrl+S) en vez de usar heredocs
+por terminal.
