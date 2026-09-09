@@ -1,7 +1,7 @@
 import { network } from "hardhat";
 
-const ATTESTATION_CORE_ADDRESS = "0x8b0783CcC1b6118bcaC084e7f2dD011D590bDe03";
-const FEE_COLLECTOR_ADDRESS = "0x58E479C35B9AC516A843165ae55AAdeb4de1f421";
+const ATTESTATION_CORE_ADDRESS = "0xF0b82F9DB7c4A58E8c161B8781834bE8Fa381Cb4";
+const FEE_COLLECTOR_ADDRESS = "0xFd6e2f8e06C007688CDB861688a631165E4c8525";
 
 const { ethers } = await network.getOrCreate({ network: "sepolia" });
 
