@@ -1,14 +1,12 @@
 # Deployment en Sepolia (testnet)
 
-## Direcciones de contratos (verificadas)
+## Direcciones de contratos (verificadas en Etherscan, Blockscout y Sourcify)
 
 | Contrato | Direccion | Verificacion |
 |---|---|---|
-| FeeCollector | `0xFd6e2f8e06C007688CDB861688a631165E4c8525` | [Etherscan](https://sepolia.etherscan.io/address/0xFd6e2f8e06C007688CDB861688a631165E4c8525#code) |
+| FeeCollector | `0xFd6e2f8e06C007688CDB861688a631165E4c8525` | [Etherscan](https://sepolia.etherscan.io/address/0xFd6e2f8e06C007688CDB861688a631165E4c8525#code) · [Blockscout](https://eth-sepolia.blockscout.com/address/0xFd6e2f8e06C007688CDB861688a631165E4c8525#code) |
 | AttestationCore | `0xF0b82F9DB7c4A58E8c161B8781834bE8Fa381Cb4` | [Etherscan](https://sepolia.etherscan.io/address/0xF0b82F9DB7c4A58E8c161B8781834bE8Fa381Cb4#code) · [Blockscout](https://eth-sepolia.blockscout.com/address/0xF0b82F9DB7c4A58E8c161B8781834bE8Fa381Cb4#code) |
 | CrossChainRelay | `0xc958482AF6c74C16A26e41F8864998f7ea4E9B7E` | [Etherscan](https://sepolia.etherscan.io/address/0xc958482AF6c74C16A26e41F8864998f7ea4E9B7E#code) · [Blockscout](https://eth-sepolia.blockscout.com/address/0xc958482AF6c74C16A26e41F8864998f7ea4E9B7E#code) |
-
-Los 3 contratos tambien estan verificados en Sourcify.
 
 ## Configuracion del deployment
 
@@ -32,11 +30,10 @@ bytecode entre lo desplegado y lo verificado.
 Se confirmo el flujo completo contra los contratos desplegados:
 emision de una attestation real (pagando el fee vigente), y verificacion
 de que el contrato la reconoce como valida (`isValid() == true`).
-Script usado: `scripts/test-e2e-sepolia.ts` (direcciones a actualizar
-si se vuelve a desplegar).
+Script usado: `scripts/test-e2e-sepolia.ts`.
 
 ## Pendiente
 
 - No se probo todavia el envio real de un mensaje cross-chain via
-  CrossChainRelay (ver docs/adr/0003-limitacion-layerzero-hardhat3.md
-  para el contexto de esa limitacion).
+  CrossChainRelay entre dos redes distintas (ver
+  docs/adr/0003-limitacion-layerzero-hardhat3.md para el contexto).
