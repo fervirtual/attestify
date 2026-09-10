@@ -32,8 +32,9 @@ emision de una attestation real (pagando el fee vigente), y verificacion
 de que el contrato la reconoce como valida (`isValid() == true`).
 Script usado: `scripts/test-e2e-sepolia.ts`.
 
-## Pendiente
+### Validacion cross-chain
 
-- No se probo todavia el envio real de un mensaje cross-chain via
-  CrossChainRelay entre dos redes distintas (ver
-  docs/adr/0003-limitacion-layerzero-hardhat3.md para el contexto).
+El envio real de un mensaje cross-chain via CrossChainRelay entre
+Sepolia y Arbitrum Sepolia ya fue validado exitosamente. Ver el
+detalle completo en `docs/guides/cross-chain-testing.md` y
+`docs/deployments/arbitrum-sepolia.md`.
