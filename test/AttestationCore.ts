@@ -89,6 +89,89 @@ describe("AttestationCore", function () {
     });
   });
 
+  describe("issuePaidAttestation", function () {
+    it("emite correctamente y reparte 5%/95% entre treasury y attester", async function () {
+      const { attestationCore, ethers, attester, recipient, treasury } = await deployFixture();
+      const price = ethers.parseEther("0.001");
+
+      const treasuryBefore = await treasury.provider.getBalance(treasury.address);
+      const attesterBefore = await attester.provider.getBalance(attester.address);
+
+      const tx = await attestationCore
+        .connect(recipient)
+        .issuePaidAttestation(SCHEMA, attester.address, 0, true, "0x1234", price, {
+          value: FEE + price,
+        });
+      await tx.wait();
+
+      const treasuryAfter = await treasury.provider.getBalance(treasury.address);
+      const attesterAfter = await attester.provider.getBalance(attester.address);
+
+      const expectedPlatformCut = (price * 500n) / 10000n;
+      const expectedAttesterCut = price - expectedPlatformCut;
+
+      expect(treasuryAfter - treasuryBefore).to.equal(FEE + expectedPlatformCut);
+      expect(attesterAfter - attesterBefore).to.equal(expectedAttesterCut);
+    });
+
+    it("emite el evento PaidAttestationIssued", async function () {
+      const { attestationCore, ethers, attester, recipient } = await deployFixture();
+      const price = ethers.parseEther("0.001");
+
+      await expect(
+        attestationCore
+          .connect(recipient)
+          .issuePaidAttestation(SCHEMA, attester.address, 0, true, "0x1234", price, {
+            value: FEE + price,
+          })
+      ).to.emit(attestationCore, "PaidAttestationIssued");
+    });
+
+    it("rechaza si msg.value no coincide exactamente", async function () {
+      const { attestationCore, ethers, attester, recipient } = await deployFixture();
+      const price = ethers.parseEther("0.001");
+
+      await expect(
+        attestationCore
+          .connect(recipient)
+          .issuePaidAttestation(SCHEMA, attester.address, 0, true, "0x1234", price, {
+            value: FEE + price - 1n,
+          })
+      ).to.be.revertedWith("Monto incorrecto");
+    });
+
+    it("rechaza attester en address(0)", async function () {
+      const { attestationCore, ethers, recipient } = await deployFixture();
+      const price = ethers.parseEther("0.001");
+
+      await expect(
+        attestationCore
+          .connect(recipient)
+          .issuePaidAttestation(
+            SCHEMA,
+            "0x0000000000000000000000000000000000000000",
+            0,
+            true,
+            "0x1234",
+            price,
+            { value: FEE + price }
+          )
+      ).to.be.revertedWith("Attester invalido");
+    });
+
+    it("rechaza price en 0", async function () {
+      const { attestationCore, attester, recipient } = await deployFixture();
+
+      await expect(
+        attestationCore
+          .connect(recipient)
+          .issuePaidAttestation(SCHEMA, attester.address, 0, true, "0x1234", 0n, {
+            value: FEE,
+          })
+      ).to.be.revertedWith("Use issueAttestation para credenciales gratuitas");
+    });
+  });
+
   describe("revokeAttestation", function () {
     async function issueFixture() {
       const base = await deployFixture();
