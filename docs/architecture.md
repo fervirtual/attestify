@@ -38,4 +38,7 @@ Ver el detalle y las razones de cada decisión en:
 
 ## Estado actual
 
-Diseño inicial. Sin código funcional publicado aún.
+Desplegado y validado en Sepolia (testnet), con los 3 contratos
+verificados publicamente. El flujo cross-chain fue probado de punta a
+punta entre Sepolia y Arbitrum Sepolia. Ver
+[`docs/deployments/`](deployments/) para el detalle completo.
