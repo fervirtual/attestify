@@ -12,6 +12,8 @@ Sepolia (testnet)
 
 - Firmantes: 1 (Attestify Treasury - cuenta de MetaMask dedicada)
 - Umbral: 1 de 1
+- Balance actual: 0.005 ETH (Sepolia) - transferido desde la wallet de
+  deploy para cubrir el fee de activacion
 
 ## Pendiente
 
