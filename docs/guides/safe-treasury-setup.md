@@ -92,20 +92,17 @@ solo una confirmacion de permisos.
 
 ## Estado actual
 
-Safe creada, fondeada, y **activada correctamente** en Sepolia.
-Direccion: `0xE7c9FA81c47C6036C2812d0c75Ef9202a2b21760`.
+Safe creada, fondeada, activada, y con **multisig real completo**:
+2 firmantes configurados (compu + celular), threshold 2 de 2 — ambas
+firmas son necesarias para cualquier transaccion.
 
-Un solo firmante configurado (threshold 1 de 1) — no es multisig
-real todavia.
+Direccion: `0xE7c9FA81c47C6036C2812d0c75Ef9202a2b21760`.
 
 ## Pendiente
 
-- [ ] Agregar la cuenta "Attestify Treasury - Signer 2" (celular) como
-  segundo firmante, y actualizar el threshold (por ejemplo, a 2 de 2,
-  o 1 de 2 segun el nivel de friccion deseado).
 - [ ] Migrar la treasury de FeeCollector hacia esta Safe, llamando
   `setTreasury()` desde la wallet de deploy actual (owner del
   contrato).
 - [ ] Crear la Safe equivalente en Ethereum mainnet cuando el
-  proyecto este listo para produccion real, con un segundo firmante
-  desde el inicio (no como agregado posterior).
+  proyecto este listo para produccion real, replicando esta misma
+  configuracion de 2 firmantes desde el inicio.
