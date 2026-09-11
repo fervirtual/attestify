@@ -2,11 +2,13 @@ import { Contract, type ContractRunner, type BigNumberish } from "ethers";
 
 import AttestationCoreAbi from "./abis/AttestationCore.json" with { type: "json" };
 import FeeCollectorAbi from "./abis/FeeCollector.json" with { type: "json" };
+import CrossChainRelayAbi from "./abis/CrossChainRelay.json" with { type: "json" };
 
 /// Direcciones de los contratos desplegados, necesarias para instanciar el SDK.
 export interface AttestifyConfig {
   attestationCoreAddress: string;
   feeCollectorAddress: string;
+  crossChainRelayAddress?: string;
 }
 
 /// Datos necesarios para emitir una nueva attestation.
@@ -36,6 +38,7 @@ export interface Attestation {
 export class Attestify {
   private readonly attestationCore: Contract;
   private readonly feeCollector: Contract;
+  private readonly crossChainRelay?: Contract;
 
   constructor(config: AttestifyConfig, runner: ContractRunner) {
     this.attestationCore = new Contract(
@@ -48,6 +51,13 @@ export class Attestify {
       FeeCollectorAbi,
       runner
     );
+    if (config.crossChainRelayAddress) {
+      this.crossChainRelay = new Contract(
+        config.crossChainRelayAddress,
+        CrossChainRelayAbi,
+        runner
+      );
+    }
   }
 
   /// Devuelve el fee vigente (en wei) que hay que pagar por operacion.
@@ -113,5 +123,65 @@ export class Attestify {
   /// Indica si una attestation es valida: existe, no fue revocada, y no expiro.
   async isValid(uid: string): Promise<boolean> {
     return await this.attestationCore.isValid(uid);
+  }
+
+  /// Consulta el costo (en wei, moneda nativa) de notificar una
+  /// attestation a otra cadena via LayerZero. Requiere haber
+  /// configurado crossChainRelayAddress al crear el cliente.
+  async quoteCrossChainNotify(params: {
+    dstEid: number;
+    uid: string;
+    schema: string;
+    attester: string;
+    recipient: string;
+    options?: string;
+  }): Promise<bigint> {
+    if (!this.crossChainRelay) {
+      throw new Error(
+        "crossChainRelayAddress no fue configurado en este cliente Attestify."
+      );
+    }
+    const fee = await this.crossChainRelay.quoteNotify(
+      params.dstEid,
+      params.uid,
+      params.schema,
+      params.attester,
+      params.recipient,
+      params.options ?? "0x"
+    );
+    return fee.nativeFee as bigint;
+  }
+
+  /// Notifica a otra cadena que una attestation fue emitida, pagando
+  /// automaticamente el fee de LayerZero consultado previamente.
+  /// Requiere haber configurado crossChainRelayAddress al crear el
+  /// cliente.
+  async notifyCrossChain(params: {
+    dstEid: number;
+    uid: string;
+    schema: string;
+    attester: string;
+    recipient: string;
+    options?: string;
+  }): Promise<string> {
+    if (!this.crossChainRelay) {
+      throw new Error(
+        "crossChainRelayAddress no fue configurado en este cliente Attestify."
+      );
+    }
+    const options = params.options ?? "0x";
+    const fee = await this.quoteCrossChainNotify({ ...params, options });
+
+    const tx = await this.crossChainRelay.notifyAttestation(
+      params.dstEid,
+      params.uid,
+      params.schema,
+      params.attester,
+      params.recipient,
+      options,
+      { value: fee }
+    );
+    const receipt = await tx.wait();
+    return receipt.hash as string;
   }
 }
