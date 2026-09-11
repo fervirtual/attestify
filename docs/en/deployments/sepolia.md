@@ -14,8 +14,12 @@
 
 - Network: Ethereum Sepolia (Chain ID 11155111)
 - Compilation profile: `production` (optimizer enabled, 200 runs)
-- FeeCollector initial fee: 0.000001 ETH
-- Initial treasury: deployer account
+- FeeCollector initial fee: 0.000001 ETH (later updated to ~$0.05
+  USD, see `scripts/update-fee.ts`)
+- Treasury: migrated to the Safe multisig
+  `0xE7c9FA81c47C6036C2812d0c75Ef9202a2b21760` (originally the
+  deployer account). See `docs/en/guides/safe-treasury-setup.md` for
+  full detail.
 - LayerZero endpoint used (CrossChainRelay): `0x6EDCE65403992e310A62460808c4b910D972f10f`
   (source: https://docs.layerzero.network/v2/deployments/deployed-contracts)
 

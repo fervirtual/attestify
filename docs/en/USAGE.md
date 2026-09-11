@@ -80,11 +80,36 @@ attestation, and it was created as revocable.
 await attestify.revokeAttestation(uid);
 ```
 
+## Cross-chain messaging
+
+If `crossChainRelayAddress` is configured when creating the client,
+you can notify another network that an attestation was issued:
+
+```typescript
+const attestify = new Attestify(
+  {
+    attestationCoreAddress: "0x...",
+    feeCollectorAddress: "0x...",
+    crossChainRelayAddress: "0x...",
+  },
+  signer
+);
+
+const txHash = await attestify.notifyCrossChain({
+  dstEid: 40231, // destination network's LayerZero Endpoint ID
+  uid: "0x...",
+  schema: "0x...",
+  attester: "0xIssuerAddress",
+  recipient: "0xRecipientAddress",
+});
+
+console.log("Notified, tx:", txHash);
+```
+
+The LayerZero fee is calculated and paid automatically. The cost can
+also be queried separately with `quoteCrossChainNotify()`.
+
 ## Notes
 
-- Cross-chain messaging (`CrossChainRelay`) is not yet exposed in the
-  SDK — it will be added in a future iteration (see
-  `docs/en/adr/0003-layerzero-hardhat3-limitation.md` for context on
-  its current status).
 - This SDK is in an early stage (v0.1.0): the interface may change
   before a stable 1.0 release.
